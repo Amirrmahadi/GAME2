@@ -9,177 +9,109 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
-        body {
-            font-family: 'Fredoka', sans-serif;
-            user-select: none;
-            -webkit-user-select: none;
-            touch-action: none;
-        }
-        canvas {
-            image-rendering: pixelated;
-        }
-        /* Mobile-first full-height optimization */
-        @media (max-width: 640px) {
-            #game-container {
-                height: 85vh !important;
-            }
-        }
+        body { font-family: 'Fredoka', sans-serif; user-select: none; -webkit-user-select: none; touch-action: none; background-color: #451a03; }
+        canvas { image-rendering: pixelated; touch-action: none; }
     </style>
 </head>
-<body class="bg-amber-950 text-slate-100 min-h-screen flex flex-col overflow-hidden">
+<body class="flex flex-col h-screen overflow-hidden text-slate-100">
 
-    <header class="bg-orange-600 text-amber-950 border-b-4 border-amber-900 py-2 px-4 flex justify-between items-center shadow-[0_4px_0_0_#78350f] shrink-0">
+    <header class="bg-orange-600 text-amber-950 border-b-4 border-amber-900 py-2 px-4 flex justify-between items-center shrink-0">
         <div class="flex items-center space-x-2">
-            <div class="bg-amber-100 text-orange-600 p-1.5 rounded-xl shadow-[inset_0_-2px_0_0_#cbd5e1] flex items-center justify-center border-2 border-amber-950">
-                <i class="fa-solid fa-truck-pickup text-lg"></i>
-            </div>
-            <div>
-                <h1 class="text-lg font-black text-amber-950 uppercase leading-none">PALM EXPRESS</h1>
-            </div>
+            <h1 class="text-lg font-black uppercase">PALM EXPRESS</h1>
         </div>
-        <div class="flex items-center space-x-2">
-            <div class="bg-amber-100 border-2 border-amber-900 px-3 py-0.5 rounded-full flex items-center space-x-1 shadow-inner">
-                <span id="global-highscore" class="font-black text-amber-950 text-xs">0m</span>
-            </div>
-            <button id="mute-btn" onclick="toggleMute()" class="text-amber-950 bg-amber-100 p-2 rounded-full border-2 border-amber-950 transition flex items-center justify-center">
-                <i id="mute-icon" class="fa-solid fa-volume-high text-sm"></i>
-            </button>
-        </div>
+        <button id="mute-btn" onclick="toggleMute()" class="bg-amber-100 p-2 rounded-full border-2 border-amber-950">
+            <i id="mute-icon" class="fa-solid fa-volume-high text-sm"></i>
+        </button>
     </header>
 
-    <main class="flex-grow flex items-center justify-center p-2 sm:p-4 overflow-hidden">
-        
-        <div id="main-menu" class="w-full max-w-lg bg-amber-100 border-4 border-amber-900 rounded-[2rem] p-5 shadow-[0_8px_0_0_#78350f] flex flex-col items-center">
-            <h2 class="text-3xl font-black text-amber-950 mb-2">FFB LORRY RUSH</h2>
-            <p class="text-amber-900 font-bold text-xs text-center mb-4">Avoid potholes & animals! 5 hits max.</p>
-            <button onclick="startGame()" class="w-full bg-green-600 hover:bg-green-500 border-4 border-amber-950 text-white font-black py-4 rounded-2xl shadow-[0_5px_0_0_#15803d] active:translate-y-1 active:shadow-none transition flex items-center justify-center space-x-2 text-lg">
-                <i class="fa-solid fa-truck-fast"></i>
-                <span>PLAY NOW</span>
-            </button>
+    <main class="flex-grow flex items-center justify-center relative">
+        <div id="main-menu" class="w-full max-w-sm bg-amber-100 border-4 border-amber-900 rounded-[2rem] p-6 shadow-2xl flex flex-col items-center">
+            <h2 class="text-2xl font-black text-amber-950 mb-4">FFB LORRY RUSH</h2>
+            <button onclick="startGame()" class="w-full bg-green-600 text-white font-black py-4 rounded-2xl border-4 border-amber-950 shadow-[0_5px_0_0_#15803d]">PLAY NOW</button>
         </div>
 
-        <div id="game-container" class="hidden w-full max-w-3xl h-[70vh] flex flex-col space-y-2">
-            <div class="bg-amber-100 border-4 border-amber-900 p-2 rounded-2xl flex justify-between items-center shadow-[0_4px_0_0_#78350f]">
-                <button onclick="exitToMenu()" class="text-amber-950 bg-white px-3 py-1 rounded-lg border-2 border-amber-900 text-[10px] font-black">EXIT</button>
-                <div class="flex items-center space-x-4">
-                    <span id="hud-speed" class="text-[10px] font-black text-orange-700">30 km/h</span>
-                    <span id="hud-distance" class="text-[10px] font-black text-green-800">0 m</span>
-                </div>
+        <div id="game-container" class="hidden w-full h-full flex flex-col">
+            <div class="absolute top-4 left-4 z-10 bg-amber-100 p-2 rounded-xl border-2 border-amber-900 text-amber-950 font-black text-xs flex space-x-4">
+                <span>Speed: <span id="hud-speed">30</span> km/h</span>
+                <span>Dist: <span id="hud-distance">0</span> m</span>
             </div>
-
-            <div class="relative bg-stone-800 border-4 border-amber-900 rounded-2xl overflow-hidden shadow-[0_8px_0_0_#78350f] flex-grow">
-                <canvas id="gameCanvas" class="w-full h-full block"></canvas>
-                
-                <div id="defeat-overlay" class="absolute inset-0 bg-stone-950/90 hidden flex flex-col justify-center items-center z-40">
-                    <div class="bg-amber-100 border-4 border-amber-900 rounded-2xl p-6 text-center max-w-[80%]">
-                        <h3 class="text-xl font-black text-red-700 mb-2">CRASHED!</h3>
-                        <button onclick="restartRun()" class="bg-green-600 text-white font-black py-3 px-6 rounded-xl w-full text-sm">TRY AGAIN</button>
-                    </div>
-                </div>
+            <canvas id="gameCanvas" class="w-full h-full"></canvas>
+            <div id="defeat-overlay" class="absolute inset-0 bg-stone-950/90 hidden flex flex-col justify-center items-center z-40">
+                <h3 class="text-3xl font-black text-red-500 mb-4">CRASHED!</h3>
+                <button onclick="restartRun()" class="bg-green-600 px-8 py-3 rounded-xl font-black">TRY AGAIN</button>
             </div>
         </div>
     </main>
 
     <script>
-        let isMuted = false;
-        let synth, noiseSynth, soundEngine, musicSynth, musicSeq;
         let canvas, ctx, animationId, gameActive = false;
-        let lorry = { x: 480, y: 430, width: 72, height: 125, targetX: 480, targetY: 430, cargoCount: 5, maxCargo: 5, shakeTimer: 0 };
-        let roadWidth = 400, roadLeft = 280, scrollOffset = 0, speed = 5, baseSpeed = 5, maxSpeed = 18, distanceMeters = 0;
-        let obstacles = [], backgroundTrees = [], particles = [], keysPressed = {};
-
-        function initSoundSystem() {
-            if (!synth) {
-                synth = new Tone.Synth().toDestination();
-                noiseSynth = new Tone.NoiseSynth().toDestination();
-                soundEngine = new Tone.PolySynth(Tone.Synth).toDestination();
-                musicSynth = new Tone.Synth({ oscillator: { type: "triangle" } }).toDestination();
-                musicSynth.volume.value = -22;
-            }
-        }
-
-        function toggleMute() {
-            isMuted = !isMuted;
-            document.getElementById("mute-icon").className = isMuted ? "fa-solid fa-volume-xmark text-red-600" : "fa-solid fa-volume-high";
-            if (isMuted) stopMusic(); else if (gameActive) startMusic();
-        }
-
-        function startMusic() {
-            if (isMuted) return;
-            initSoundSystem();
-            if (Tone.context.state !== 'running') Tone.start();
-            Tone.Transport.bpm.value = 135;
-            if (!musicSeq) musicSeq = new Tone.Sequence((time, note) => { if(!isMuted && gameActive) musicSynth.triggerAttackRelease(note, "8n", time); }, ["C4", "E4", "G4", "C5", "A4", "F4", "C5", "A4"], "8n");
-            Tone.Transport.start();
-            musicSeq.start(0);
-        }
-
-        function stopMusic() { if (musicSeq) musicSeq.stop(); Tone.Transport.stop(); }
+        let lorry = { x: 480, y: 400, targetX: 480, targetY: 400, cargo: 5 };
+        let speed = 5, distance = 0, obstacles = [], scroll = 0, isMuted = false;
+        let musicSynth;
 
         function startGame() {
             document.getElementById("main-menu").classList.add("hidden");
             document.getElementById("game-container").classList.remove("hidden");
             canvas = document.getElementById("gameCanvas");
             ctx = canvas.getContext("2d");
-            resizeGameCanvas();
-            resetGameSession();
+            canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
             gameActive = true;
             startMusic();
-            gameLoop();
+            loop();
         }
 
-        function resizeGameCanvas() {
-            // High resolution set, CSS scales it to fill the container
-            canvas.width = 960;
-            canvas.height = 540;
+        function startMusic() {
+            if (isMuted) return;
+            if (!musicSynth) musicSynth = new Tone.Synth().toDestination();
+            if (Tone.context.state !== 'running') Tone.start();
+            new Tone.Sequence((time, note) => musicSynth.triggerAttackRelease(note, "8n", time), ["C4", "E4", "G4", "C5"], "4n").start(0);
+            Tone.Transport.start();
         }
 
-        function resetGameSession() {
-            speed = baseSpeed; distanceMeters = 0; lorry.cargoCount = 5;
-            obstacles = []; backgroundTrees = []; particles = [];
-            lorry.x = canvas.width / 2; lorry.y = 430;
+        function toggleMute() {
+            isMuted = !isMuted;
+            document.getElementById("mute-icon").className = isMuted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
+            if (isMuted) Tone.Transport.stop(); else Tone.Transport.start();
         }
 
-        function gameLoop() {
+        function loop() {
             if (!gameActive) return;
-            // Simplified Game Logic for demonstration
-            updatePhysics();
-            renderCanvasGraphics();
-            animationId = requestAnimationFrame(gameLoop);
+            update();
+            draw();
+            animationId = requestAnimationFrame(loop);
         }
 
-        function updatePhysics() {
-            distanceMeters += (speed / 35);
-            scrollOffset = (scrollOffset + speed) % canvas.height;
-            // ... (rest of physics logic stays same)
+        function update() {
+            distance += speed / 10;
+            scroll = (scroll + speed) % 100;
+            if (Math.random() < 0.05) obstacles.push({ x: 100 + Math.random() * (canvas.width - 200), y: -50 });
+            
+            obstacles.forEach((o, i) => {
+                o.y += speed;
+                let dx = lorry.x - o.x, dy = lorry.y - o.y;
+                if (Math.sqrt(dx*dx + dy*dy) < 40) {
+                    lorry.cargo--; obstacles.splice(i, 1);
+                    if (lorry.cargo <= 0) { gameActive = false; document.getElementById("defeat-overlay").classList.remove("hidden"); }
+                }
+                if (o.y > canvas.height) obstacles.splice(i, 1);
+            });
+            document.getElementById("hud-distance").innerText = Math.floor(distance);
         }
 
-        function renderCanvasGraphics() {
-            ctx.fillStyle = "#15803d"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#78350f"; ctx.fillRect(roadLeft, 0, roadWidth, canvas.height);
-            // ... (rest of render logic)
+        function draw() {
+            ctx.fillStyle = "#166534"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#78350f"; ctx.fillRect(100, 0, canvas.width - 200, canvas.height);
+            ctx.fillStyle = "white";
+            ctx.fillRect(lorry.x - 20, lorry.y - 30, 40, 60);
+            obstacles.forEach(o => { ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(o.x, o.y, 20, 0, Math.PI*2); ctx.fill(); });
         }
 
-        function exitToMenu() {
-            gameActive = false; cancelAnimationFrame(animationId); stopMusic();
-            document.getElementById("game-container").classList.add("hidden");
-            document.getElementById("main-menu").classList.remove("hidden");
-        }
+        window.addEventListener('touchmove', (e) => {
+            lorry.x = e.touches[0].clientX; lorry.y = e.touches[0].clientY;
+        }, {passive: false});
 
-        function restartRun() {
-            document.getElementById("defeat-overlay").classList.add("hidden");
-            resetGameSession(); gameActive = true; startMusic(); gameLoop();
-        }
-
-        // Add touch steering logic back
-        window.addEventListener('DOMContentLoaded', () => {
-            document.addEventListener('touchstart', (e) => { 
-                const rect = canvas.getBoundingClientRect();
-                lorry.targetX = ((e.touches[0].clientX - rect.left) / rect.width) * canvas.width;
-                lorry.targetY = ((e.touches[0].clientY - rect.top) / rect.height) * canvas.height;
-            }, {passive: false});
-        });
-
+        function exitToMenu() { location.reload(); }
+        function restartRun() { location.reload(); }
     </script>
 </body>
 </html>
