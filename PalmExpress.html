@@ -20,6 +20,9 @@
             touch-action: none; /* Crucial for preventing mobile pull-to-refresh */
             background-color: #291002;
             background-image: radial-gradient(circle at center, #451a03 0%, #291002 100%);
+            overflow: hidden;
+            margin: 0;
+            padding: 0;
         }
         canvas {
             image-rendering: pixelated; 
@@ -81,7 +84,7 @@
         </div>
 
         <!-- Game Container -->
-        <div id="game-container" class="hidden w-full h-[80vh] sm:h-[80vh] flex flex-col relative rounded-[2rem] overflow-hidden border-4 border-amber-900 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.6),_0_8px_0_0_#78350f]">
+        <div id="game-container" class="hidden w-full h-[100dvh] sm:h-[85vh] flex flex-col relative rounded-none sm:rounded-[2rem] overflow-hidden border-0 sm:border-4 border-amber-900 shadow-[0_12px_30px_-5px_rgba(0,0,0,0.6),_0_8px_0_0_#78350f]">
             
             <!-- Floating HUD -->
             <div class="absolute top-0 left-0 right-0 p-3 sm:p-4 flex justify-between items-start z-10 pointer-events-none">
@@ -109,7 +112,7 @@
             </div>
 
             <!-- The Game Canvas -->
-            <canvas id="gameCanvas" class="w-full h-full block bg-stone-800 cursor-crosshair"></canvas>
+            <canvas id="gameCanvas" class="absolute inset-0 w-full h-full block bg-stone-800 cursor-crosshair"></canvas>
             
             <!-- Mobile Control Helper -->
             <div class="absolute bottom-6 left-0 right-0 flex justify-center pointer-events-none opacity-80">
@@ -276,6 +279,10 @@
                 lastPointerX = e.clientX; 
                 lastPointerY = e.clientY; 
             });
+
+        window.addEventListener('resize', () => {
+            if (canvas) resizeCanvas();
+        });
             window.addEventListener('mousemove', (e) => { 
                 if (isPointerActive && gameActive) { 
                     handleRelativeMove(e.clientX, e.clientY); 
@@ -321,6 +328,28 @@
             lastPointerY = clientY;
         }
 
+
+        function resizeCanvas() {
+            const container = document.getElementById("game-container");
+            const rect = container.getBoundingClientRect();
+
+            canvas.width = rect.width;
+            canvas.height = rect.height;
+
+            roadWidth = Math.min(canvas.width * 0.45, 400);
+            roadLeft = (canvas.width - roadWidth) / 2;
+
+            if (lorry.x > canvas.width) {
+                lorry.x = canvas.width / 2;
+                lorry.targetX = lorry.x;
+            }
+
+            if (lorry.y > canvas.height) {
+                lorry.y = canvas.height - 120;
+                lorry.targetY = lorry.y;
+            }
+        }
+
         function startGame() {
             initSoundSystem();
             if (Tone.context.state !== 'running') Tone.start();
@@ -328,12 +357,14 @@
             document.getElementById("main-menu").classList.add("hidden");
             document.getElementById("game-container").classList.remove("hidden");
 
-            canvas.width = 960;
-            canvas.height = 540;
-            roadWidth = 400;
-            roadLeft = (canvas.width - roadWidth) / 2;
+            resizeCanvas();
 
             resetGameSession();
+
+            lorry.x = canvas.width / 2;
+            lorry.y = canvas.height - 120;
+            lorry.targetX = lorry.x;
+            lorry.targetY = lorry.y;
             gameActive = true;
             startMusic();
             gameLoop();
@@ -344,7 +375,7 @@
             distanceMeters = 0;
             lorry.cargoCount = 5;
             lorry.x = canvas.width / 2;
-            lorry.y = 430;
+            lorry.y = canvas.height - 120;
             lorry.targetX = lorry.x;
             lorry.targetY = lorry.y;
             lorry.shakeTimer = 0;
@@ -462,7 +493,7 @@
             if (lorry.targetX < roadLeft + borderPad) lorry.targetX = roadLeft + borderPad;
             if (lorry.targetX > roadLeft + roadWidth - borderPad) lorry.targetX = roadLeft + roadWidth - borderPad;
             if (lorry.targetY < 160) lorry.targetY = 160;
-            if (lorry.targetY > 480) lorry.targetY = 480;
+            if (lorry.targetY > canvas.height - 60) lorry.targetY = canvas.height - 60;
 
             // Smooth interpolation
             lorry.x += (lorry.targetX - lorry.x) * 0.18;
