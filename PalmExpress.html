@@ -44,74 +44,78 @@
     </main>
 
     <script>
-        let canvas, ctx, animationId, gameActive = false;
-        let lorry = { x: 480, y: 400, targetX: 480, targetY: 400, cargo: 5 };
-        let speed = 5, distance = 0, obstacles = [], scroll = 0, isMuted = false;
-        let musicSynth;
+        let isMuted = false;
+        let synth, noiseSynth, soundEngine;
+        let melodySequence; // Added to manage music
 
-        function startGame() {
-            document.getElementById("main-menu").classList.add("hidden");
-            document.getElementById("game-container").classList.remove("hidden");
-            canvas = document.getElementById("gameCanvas");
-            ctx = canvas.getContext("2d");
-            canvas.width = canvas.clientWidth; canvas.height = canvas.clientHeight;
-            gameActive = true;
-            startMusic();
-            loop();
+        // Persistent Sound System powered by Tone.js
+        function initSoundSystem() {
+            try {
+                if (!synth) {
+                    synth = new Tone.Synth({
+                        oscillator: { type: "triangle" },
+                        envelope: { attack: 0.05, decay: 0.2, sustain: 0.3, release: 1 }
+                    }).toDestination();
+                    noiseSynth = new Tone.NoiseSynth().toDestination();
+                    soundEngine = new Tone.PolySynth(Tone.Synth).toDestination();
+
+                    synth.volume.value = -12;
+                    noiseSynth.volume.value = -18;
+                    soundEngine.volume.value = -15;
+
+                    // Kids-friendly upbeat loop sequence
+                    melodySequence = new Tone.Sequence((time, note) => {
+                        synth.triggerAttackRelease(note, "8n", time);
+                    }, ["C4", "E4", "G4", "C5", "A4", "G4", "E4", "C4"], "4n");
+                }
+            } catch (e) {
+                console.log("Audio activation constraint: ", e);
+            }
         }
 
-        function startMusic() {
+        function triggerSound(type) {
             if (isMuted) return;
-            if (!musicSynth) musicSynth = new Tone.Synth().toDestination();
-            if (Tone.context.state !== 'running') Tone.start();
-            new Tone.Sequence((time, note) => musicSynth.triggerAttackRelease(note, "8n", time), ["C4", "E4", "G4", "C5"], "4n").start(0);
-            Tone.Transport.start();
-        }
-
+            try {
+// ... existing code ... -->
         function toggleMute() {
             isMuted = !isMuted;
-            document.getElementById("mute-icon").className = isMuted ? "fa-solid fa-volume-xmark" : "fa-solid fa-volume-high";
-            if (isMuted) Tone.Transport.stop(); else Tone.Transport.start();
-        }
-
-        function loop() {
-            if (!gameActive) return;
-            update();
-            draw();
-            animationId = requestAnimationFrame(loop);
-        }
-
-        function update() {
-            distance += speed / 10;
-            scroll = (scroll + speed) % 100;
-            if (Math.random() < 0.05) obstacles.push({ x: 100 + Math.random() * (canvas.width - 200), y: -50 });
-            
-            obstacles.forEach((o, i) => {
-                o.y += speed;
-                let dx = lorry.x - o.x, dy = lorry.y - o.y;
-                if (Math.sqrt(dx*dx + dy*dy) < 40) {
-                    lorry.cargo--; obstacles.splice(i, 1);
-                    if (lorry.cargo <= 0) { gameActive = false; document.getElementById("defeat-overlay").classList.remove("hidden"); }
+            const icon = document.getElementById("mute-icon");
+            const btn = document.getElementById("mute-btn");
+            if (isMuted) {
+                icon.className = "fa-solid fa-volume-xmark text-red-600 animate-pulse";
+                btn.classList.add("border-red-500");
+                Tone.Transport.stop(); // Stop music when muted
+            } else {
+                icon.className = "fa-solid fa-volume-high";
+                btn.classList.remove("border-red-500");
+                initSoundSystem();
+                if (Tone.context) {
+                    Tone.start();
+                    Tone.Transport.start(); // Resume music when unmuted
                 }
-                if (o.y > canvas.height) obstacles.splice(i, 1);
-            });
-            document.getElementById("hud-distance").innerText = Math.floor(distance);
+            }
         }
 
-        function draw() {
-            ctx.fillStyle = "#166534"; ctx.fillRect(0, 0, canvas.width, canvas.height);
-            ctx.fillStyle = "#78350f"; ctx.fillRect(100, 0, canvas.width - 200, canvas.height);
-            ctx.fillStyle = "white";
-            ctx.fillRect(lorry.x - 20, lorry.y - 30, 40, 60);
-            obstacles.forEach(o => { ctx.fillStyle = "red"; ctx.beginPath(); ctx.arc(o.x, o.y, 20, 0, Math.PI*2); ctx.fill(); });
-        }
+        let highScore = 0;
+// ... existing code ... -->
+        function startGame() {
+            initSoundSystem();
+            if (Tone.context && Tone.context.state !== 'running') {
+                Tone.start();
+            }
+            
+            // Start the music loop
+            if (!isMuted) {
+                Tone.Transport.start();
+                melodySequence.start(0);
+            }
 
-        window.addEventListener('touchmove', (e) => {
-            lorry.x = e.touches[0].clientX; lorry.y = e.touches[0].clientY;
-        }, {passive: false});
-
-        function exitToMenu() { location.reload(); }
-        function restartRun() { location.reload(); }
-    </script>
-</body>
-</html>
+            document.getElementById("main-menu").classList.add("hidden");
+// ... existing code ... -->
+        function exitToMenu() {
+            gameActive = false;
+            Tone.Transport.stop(); // Stop music on exit
+            cancelAnimationFrame(animationId);
+            
+            document.getElementById("game-container").classList.add("hidden");
+// ... existing code ... -->
