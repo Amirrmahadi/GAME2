@@ -2,479 +2,128 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Palm Express: FFB Lorry Rush</title>
-    <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts (Fredoka for playful cartoony text) -->
     <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@300;400;600;700&display=swap" rel="stylesheet">
-    <!-- FontAwesome for Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <!-- Tone.js for real-time sound effects -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
     <style>
         body {
             font-family: 'Fredoka', sans-serif;
             user-select: none;
             -webkit-user-select: none;
-        }
-        /* Styling scrollbars if needed */
-        ::-webkit-scrollbar {
-            width: 8px;
-        }
-        ::-webkit-scrollbar-track {
-            background: #451a03;
-        }
-        ::-webkit-scrollbar-thumb {
-            background: #ea580c;
-            border-radius: 4px;
+            touch-action: none;
+            background-color: #451a03; /* Match the footer dark tone */
         }
         canvas {
             image-rendering: pixelated;
         }
+        /* Mobile-first full-height optimization */
+        @media (max-width: 640px) {
+            #game-container {
+                height: 85vh !important;
+            }
+        }
     </style>
 </head>
-<body class="bg-amber-950 text-slate-100 min-h-screen flex flex-col justify-between overflow-x-hidden">
+<body class="bg-amber-950 text-slate-100 min-h-screen flex flex-col overflow-hidden">
 
-    <header class="bg-orange-600 text-amber-950 border-b-4 border-amber-900 py-3 px-6 flex justify-between items-center shadow-[0_4px_0_0_#78350f] sticky top-0 z-50">
-        <div class="flex items-center space-x-3">
-            <div class="bg-amber-100 text-orange-600 p-2 rounded-2xl shadow-[inset_0_-4px_0_0_#cbd5e1] flex items-center justify-center border-2 border-amber-950">
-                <i class="fa-solid fa-truck-pickup text-2xl animate-bounce"></i>
+    <header class="bg-orange-600 text-amber-950 border-b-4 border-amber-900 py-2 px-4 flex justify-between items-center shadow-[0_4px_0_0_#78350f] shrink-0">
+        <div class="flex items-center space-x-2">
+            <div class="bg-amber-100 text-orange-600 p-1.5 rounded-xl shadow-[inset_0_-2px_0_0_#cbd5e1] flex items-center justify-center border-2 border-amber-950">
+                <i class="fa-solid fa-truck-pickup text-lg"></i>
             </div>
             <div>
-                <h1 class="text-xl md:text-2xl font-black tracking-wide text-amber-950 uppercase">PALM EXPRESS!</h1>
-                <p class="text-xs font-bold text-amber-900">Endless Muddy Road Survival</p>
+                <h1 class="text-lg font-black text-amber-950 uppercase leading-none">PALM EXPRESS</h1>
             </div>
         </div>
-        
-        <div class="flex items-center space-x-4">
-            <!-- Persistent High Score Display -->
-            <div class="bg-amber-100 border-4 border-amber-900 px-4 py-1 rounded-full flex items-center space-x-2 shadow-inner">
-                <i class="fa-solid fa-trophy text-amber-600 text-lg"></i>
-                <span class="text-xs font-black text-amber-900 uppercase">Best:</span>
-                <span id="global-highscore" class="font-extrabold text-amber-950">0m</span>
+        <div class="flex items-center space-x-2">
+            <div class="bg-amber-100 border-2 border-amber-900 px-3 py-0.5 rounded-full flex items-center space-x-1 shadow-inner">
+                <span id="global-highscore" class="font-black text-amber-950 text-xs">0m</span>
             </div>
-            <!-- Audio Controller Toggle -->
-            <button id="mute-btn" onclick="toggleMute()" class="text-amber-950 bg-amber-100 hover:bg-amber-200 p-2 rounded-full border-2 border-amber-950 transition flex items-center justify-center">
-                <i id="mute-icon" class="fa-solid fa-volume-high"></i>
+            <button id="mute-btn" onclick="toggleMute()" class="text-amber-950 bg-amber-100 p-2 rounded-full border-2 border-amber-950 transition flex items-center justify-center">
+                <i id="mute-icon" class="fa-solid fa-volume-high text-sm"></i>
             </button>
         </div>
     </header>
 
-    <!-- Main Game Workspace -->
-    <main class="flex-grow flex items-center justify-center p-4">
+    <main class="flex-grow flex items-center justify-center p-2 sm:p-4 overflow-hidden">
         
-        <div id="main-menu" class="w-full max-w-2xl bg-amber-100 border-4 border-amber-900 rounded-[2.5rem] p-6 md:p-10 shadow-[0_12px_0_0_#78350f] relative overflow-hidden flex flex-col items-center">
-            
-            <!-- Beautiful Background Overlay Vectors of Palms -->
-            <div class="absolute -top-12 -left-12 text-green-700/10 text-[14rem] pointer-events-none select-none">
-                <i class="fa-solid fa-tree"></i>
-            </div>
-            <div class="absolute -bottom-12 -right-12 text-green-700/10 text-[14rem] pointer-events-none select-none">
-                <i class="fa-solid fa-leaf"></i>
-            </div>
-
-            <div class="text-center z-10 max-w-md mb-6">
-                <span class="bg-orange-600 text-white text-xs font-extrabold px-3 py-1.5 rounded-full border-2 border-amber-950 uppercase tracking-widest shadow-[0_3px_0_0_#78350f]">Infinite Challenge</span>
-                <h2 class="text-4xl md:text-5xl font-black mt-4 mb-4 tracking-tight text-amber-950 drop-shadow-[0_3px_0_rgba(251,191,36,1)]">
-                    FFB LORRY RUSH
-                </h2>
-                <p class="text-amber-900 font-bold text-sm leading-relaxed">
-                    Now with <span class="text-amber-950 font-black">Full 2D Control!</span> Steer your heavy cargo truck <span class="text-orange-700 font-black">left, right, forward, and backward</span> down the plantation road. Avoid potholes, muddy ruts, and <span class="text-red-700 font-black">crossing wild boars or monkeys</span>! You only have <span class="text-red-700 font-extrabold">5 hits</span> before game over.
-                </p>
-            </div>
-
-            <!-- Single Epic Play Action Card -->
-            <div class="w-full max-w-md bg-orange-400 border-4 border-amber-900 rounded-[2rem] p-6 flex flex-col justify-between hover:scale-[1.01] transition shadow-[0_6px_0_0_#78350f] z-10">
-                <div class="mb-4">
-                    <div class="flex items-center space-x-3 text-amber-950 mb-2 justify-center">
-                        <i class="fa-solid fa-circle-play text-2xl animate-bounce text-amber-950"></i>
-                        <h3 class="text-lg font-black text-amber-950">Prepare the Expedition</h3>
-                    </div>
-                    <p class="text-xs text-amber-950/90 font-bold text-center mb-4">
-                        The speed increases automatically. Move in all directions to swerve around crossing wildlife!
-                    </p>
-                    
-                    <div class="bg-white/80 rounded-xl p-3 border-2 border-amber-900 text-xs text-amber-950 font-bold space-y-1">
-                        <div class="flex justify-between">
-                            <span>Starting Speed:</span>
-                            <span class="font-black text-orange-700">30 km/h</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>Lorry Capacity:</span>
-                            <span class="font-black text-orange-700">5 Fruit Bunches</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span>New Hazards:</span>
-                            <span class="font-black text-red-700">Crossing Boars & Monkeys</span>
-                        </div>
-                    </div>
-                </div>
-                
-                <button onclick="startGame()" class="w-full bg-green-600 hover:bg-green-500 border-4 border-amber-950 text-white font-black py-4 rounded-2xl shadow-[0_5px_0_0_#15803d] active:translate-y-1 active:shadow-none transition flex items-center justify-center space-x-2 text-lg">
-                    <i class="fa-solid fa-truck-fast text-xl"></i>
-                    <span>START THE ENGINE!</span>
-                </button>
-            </div>
+        <div id="main-menu" class="w-full max-w-lg bg-amber-100 border-4 border-amber-900 rounded-[2rem] p-5 shadow-[0_8px_0_0_#78350f] flex flex-col items-center">
+            <h2 class="text-3xl font-black text-amber-950 mb-2">FFB LORRY RUSH</h2>
+            <p class="text-amber-900 font-bold text-xs text-center mb-4">Avoid potholes & animals! 5 hits max.</p>
+            <button onclick="startGame()" class="w-full bg-green-600 hover:bg-green-500 border-4 border-amber-950 text-white font-black py-4 rounded-2xl shadow-[0_5px_0_0_#15803d] active:translate-y-1 active:shadow-none transition flex items-center justify-center space-x-2 text-lg">
+                <i class="fa-solid fa-truck-fast"></i>
+                <span>PLAY NOW</span>
+            </button>
         </div>
 
-        <div id="game-container" class="hidden w-full max-w-4xl flex flex-col space-y-3">
-            
-            <!-- Real-time HUD Status Ribbon -->
-            <div class="bg-amber-100 border-4 border-amber-900 p-3 rounded-[2rem] flex flex-wrap gap-3 items-center justify-between shadow-[0_6px_0_0_#78350f]">
-                <div class="flex items-center space-x-3">
-                    <button onclick="exitToMenu()" class="text-amber-950 hover:bg-amber-200 bg-white px-3 py-1.5 rounded-xl border-2 border-amber-900 text-xs font-black transition flex items-center space-x-1 shadow-[0_2px_0_0_#78350f]">
-                        <i class="fa-solid fa-arrow-left"></i>
-                        <span>Exit</span>
-                    </button>
-                    <div class="h-5 w-px bg-amber-900/30"></div>
-                    <div class="flex items-center space-x-1.5">
-                        <span class="text-xs text-amber-900 font-bold uppercase">Speed:</span>
-                        <span id="hud-speed" class="text-xs font-black text-orange-700 animate-pulse">30 km/h</span>
-                    </div>
-                </div>
-
-                <!-- Live Performance Metrics -->
-                <div class="flex items-center space-x-3">
-                    <!-- FFB Cargo Load Status (represented as Hearts / Fruit slots) -->
-                    <div class="bg-white border-2 border-amber-900 px-3 py-1 rounded-xl flex items-center space-x-1.5 shadow-sm">
-                        <span class="text-xs font-black text-amber-900 mr-1">Cargo:</span>
-                        <div id="cargo-slots" class="flex items-center space-x-1">
-                            <!-- Populated with orange circle fruit icons in JS -->
-                        </div>
-                    </div>
-
-                    <!-- Meters Traveled Distance (Score) -->
-                    <div class="bg-white border-2 border-amber-900 px-3 py-1 rounded-xl flex items-center space-x-1.5 shadow-sm">
-                        <i class="fa-solid fa-route text-green-700"></i>
-                        <span id="hud-distance" class="text-sm font-black text-green-800">0 m</span>
-                    </div>
+        <!-- Made container wider and taller for larger screen real estate -->
+        <div id="game-container" class="hidden w-full max-w-5xl h-[80vh] flex flex-col space-y-2">
+            <div class="bg-amber-100 border-4 border-amber-900 p-2 rounded-2xl flex justify-between items-center shadow-[0_4px_0_0_#78350f]">
+                <button onclick="exitToMenu()" class="text-amber-950 bg-white px-3 py-1 rounded-lg border-2 border-amber-900 text-[10px] font-black">EXIT</button>
+                <div class="flex items-center space-x-4">
+                    <span id="hud-speed" class="text-[10px] font-black text-orange-700">30 km/h</span>
+                    <span id="hud-distance" class="text-[10px] font-black text-green-800">0 m</span>
                 </div>
             </div>
 
-            <!-- Driving Canvas Game Frame -->
-            <div class="relative bg-stone-800 border-4 border-amber-900 rounded-[2.5rem] overflow-hidden shadow-[0_12px_0_0_#78350f] aspect-[16/9] w-full">
-                <canvas id="gameCanvas" class="w-full h-full block cursor-crosshair"></canvas>
+            <div class="relative bg-stone-800 border-4 border-amber-900 rounded-2xl overflow-hidden shadow-[0_8px_0_0_#78350f] flex-grow">
+                <canvas id="gameCanvas" class="w-full h-full block"></canvas>
                 
-                <!-- Swipe or Drag Steering Helper Overlay on Mobile -->
-                <div class="absolute bottom-4 left-0 right-0 flex justify-between px-6 pointer-events-none md:hidden">
-                    <div class="bg-black/40 text-white text-[10px] px-2.5 py-1.5 rounded-full font-bold backdrop-blur-sm">
-                        ⬅️ Slide Left/Right
-                    </div>
-                    <div class="bg-black/40 text-white text-[10px] px-2.5 py-1.5 rounded-full font-bold backdrop-blur-sm">
-                        Slide Up/Down ➡️
+                <div id="defeat-overlay" class="absolute inset-0 bg-stone-950/90 hidden flex flex-col justify-center items-center z-40">
+                    <div class="bg-amber-100 border-4 border-amber-900 rounded-2xl p-6 text-center max-w-[80%]">
+                        <h3 class="text-xl font-black text-red-700 mb-2">CRASHED!</h3>
+                        <button onclick="restartRun()" class="bg-green-600 text-white font-black py-3 px-6 rounded-xl w-full text-sm">TRY AGAIN</button>
                     </div>
                 </div>
-
-                <!-- Run Defeat / Fruit Empty Overlay -->
-                <div id="defeat-overlay" class="absolute inset-0 bg-stone-950/90 backdrop-blur-md flex flex-col justify-center items-center pointer-events-none transition opacity-0 scale-95 z-40">
-                    <div class="text-center p-6 bg-amber-100 border-4 border-amber-900 rounded-[2.5rem] max-w-sm shadow-[0_8px_0_0_#78350f] transform transition-transform">
-                        <div class="w-16 h-16 bg-red-100 text-red-600 rounded-full flex items-center justify-center mx-auto text-4xl mb-3 animate-bounce border-2 border-red-500">
-                            <i class="fa-solid fa-triangle-exclamation"></i>
-                        </div>
-                        <h3 class="text-2xl font-black text-red-700 mb-1">LORRY BROKEN DOWN!</h3>
-                        <p class="text-xs text-amber-900 font-bold mb-4">
-                            You crashed 5 times! Your suspension snapped, the cargo is completely gone, and your radiator blew out!
-                        </p>
-                        
-                        <!-- Run Summary -->
-                        <div class="bg-white p-3 rounded-xl border-2 border-amber-900 text-left space-y-2 mb-4">
-                            <div class="flex justify-between text-xs font-black text-amber-900">
-                                <span>Distance Traveled:</span>
-                                <span id="summary-distance" class="text-green-700 font-extrabold text-sm">0 m</span>
-                            </div>
-                            <div class="flex justify-between text-xs font-black text-amber-900">
-                                <span>Previous High Score:</span>
-                                <span id="summary-highscore" class="text-amber-800">0 m</span>
-                            </div>
-                            <div id="new-record-tag" class="hidden text-center text-xs font-black text-amber-100 bg-orange-600 border border-amber-950 py-1 rounded-lg animate-pulse uppercase">
-                                🎉 NEW HIGHSCORE!
-                            </div>
-                        </div>
-
-                        <div class="grid grid-cols-2 gap-3 pointer-events-auto">
-                            <button onclick="restartRun()" class="bg-green-600 hover:bg-green-500 border-2 border-amber-950 text-white font-black py-2.5 rounded-xl transition text-xs shadow-[0_3px_0_0_#15803d]">
-                                Try Again
-                            </button>
-                            <button onclick="exitToMenu()" class="bg-white hover:bg-slate-100 border-2 border-amber-950 text-amber-950 font-black py-2.5 rounded-xl transition text-xs shadow-[0_3px_0_0_#78350f]">
-                                Main Menu
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Bottom steering ribbon and keyboard guide -->
-            <div class="bg-amber-100 border-4 border-amber-900 p-3 rounded-2xl flex justify-between items-center text-xs text-amber-900 font-bold shadow-md">
-                <span class="flex items-center space-x-1.5 text-[11px] sm:text-xs">
-                    <i class="fa-solid fa-wand-magic-sparkles text-orange-600 animate-pulse"></i>
-                    <span>Use Arrows (WASD) or drag anywhere to steer 360° around animals and holes!</span>
-                </span>
-                <span class="hidden md:inline bg-white px-2.5 py-1 rounded-lg border-2 border-amber-900 text-[10px] font-black">
-                    KEYS: ⬅️ ➡️ ⬆️ ⬇️ / W A S D
-                </span>
             </div>
         </div>
     </main>
 
-    <!-- Main Footer -->
-    <footer class="bg-amber-950 text-center py-3 text-xs text-amber-700 font-bold border-t border-amber-900/40">
-        Palm Express Studio © 2026. Keep the harvest safe on the muddy roads!
-    </footer>
-
     <script>
         let isMuted = false;
-        let synth, noiseSynth, soundEngine;
-        let musicSynth, musicSeq;
+        let synth, noiseSynth, soundEngine, musicSynth, musicSeq;
+        let canvas, ctx, animationId, gameActive = false;
+        let lorry = { x: 480, y: 430, width: 72, height: 125, targetX: 480, targetY: 430, cargoCount: 5, maxCargo: 5, shakeTimer: 0 };
+        let roadWidth = 400, roadLeft = 280, scrollOffset = 0, speed = 5, baseSpeed = 5, maxSpeed = 18, distanceMeters = 0;
+        let obstacles = [], backgroundTrees = [], particles = [], keysPressed = {};
 
-        // Playful, nursery-style major key melody loop for background music
-        const melodyNotes = [
-            "C4", "E4", "G4", "C5", "A4", "F4", "C5", "A4",
-            "G4", "E4", "G4", "C5", "D4", "F4", "A4", "B4",
-            "C5", "C5", "B4", "A4", "G4", "F4", "E4", "D4",
-            "C4", "E4", "G4", "C5", "D5", "B4", "G4", "C5"
-        ];
-
-        // Persistent Sound System powered by Tone.js
         function initSoundSystem() {
-            try {
-                if (!synth) {
-                    synth = new Tone.Synth().toDestination();
-                    noiseSynth = new Tone.NoiseSynth().toDestination();
-                    soundEngine = new Tone.PolySynth(Tone.Synth).toDestination();
-
-                    synth.volume.value = -12;
-                    noiseSynth.volume.value = -18;
-                    soundEngine.volume.value = -15;
-                }
-                if (!musicSynth) {
-                    musicSynth = new Tone.Synth({
-                        oscillator: { type: "triangle" },
-                        envelope: { attack: 0.05, decay: 0.15, sustain: 0.2, release: 0.4 }
-                    }).toDestination();
-                    musicSynth.volume.value = -22; // Soft kid-friendly volume level
-                }
-            } catch (e) {
-                console.log("Audio activation constraint: ", e);
+            if (!synth) {
+                synth = new Tone.Synth().toDestination();
+                noiseSynth = new Tone.NoiseSynth().toDestination();
+                soundEngine = new Tone.PolySynth(Tone.Synth).toDestination();
+                musicSynth = new Tone.Synth({ oscillator: { type: "triangle" } }).toDestination();
+                musicSynth.volume.value = -22;
             }
-        }
-
-        function startMusic() {
-            if (isMuted) return;
-            try {
-                initSoundSystem();
-                if (Tone.context && Tone.context.state !== 'running') {
-                    Tone.start();
-                }
-
-                Tone.Transport.bpm.value = 135;
-
-                if (!musicSeq) {
-                    musicSeq = new Tone.Sequence((time, note) => {
-                        if (note && !isMuted && gameActive) {
-                            musicSynth.triggerAttackRelease(note, "8n", time);
-                        }
-                    }, melodyNotes, "8n");
-                }
-
-                Tone.Transport.start();
-                musicSeq.start(0);
-            } catch (e) {
-                console.log("Music player constraint: ", e);
-            }
-        }
-
-        function stopMusic() {
-            try {
-                if (musicSeq) {
-                    musicSeq.stop();
-                }
-                Tone.Transport.stop();
-            } catch (e) {}
-        }
-
-        function triggerSound(type) {
-            if (isMuted) return;
-            try {
-                if (Tone.context && Tone.context.state !== 'running') {
-                    Tone.start();
-                }
-                initSoundSystem();
-
-                if (type === 'crash') {
-                    // low rumble mud-splash & impact explosion
-                    synth.triggerAttackRelease("D2", "4n");
-                    noiseSynth.triggerAttackRelease("4n");
-                } else if (type === 'animal_hit') {
-                    // funny high pitched squeal
-                    synth.triggerAttackRelease("A4", "16n");
-                    setTimeout(() => {
-                        synth.triggerAttackRelease("E5", "8n");
-                    }, 50);
-                } else if (type === 'defeat') {
-                    // downward dynamic sad melody
-                    soundEngine.triggerAttackRelease(["F3", "Db3", "Bb2"], "2n");
-                } else if (type === 'engine_sputter') {
-                    // short friction alert sputter
-                    synth.triggerAttackRelease("G2", "32n");
-                }
-            } catch (e) {}
         }
 
         function toggleMute() {
             isMuted = !isMuted;
-            const icon = document.getElementById("mute-icon");
-            const btn = document.getElementById("mute-btn");
-            if (isMuted) {
-                icon.className = "fa-solid fa-volume-xmark text-red-600 animate-pulse";
-                btn.classList.add("border-red-500");
-                stopMusic();
-            } else {
-                icon.className = "fa-solid fa-volume-high";
-                btn.classList.remove("border-red-500");
-                initSoundSystem();
-                if (Tone.context) Tone.start();
-                if (gameActive) {
-                    startMusic();
-                }
-            }
+            document.getElementById("mute-icon").className = isMuted ? "fa-solid fa-volume-xmark text-red-600" : "fa-solid fa-volume-high";
+            if (isMuted) stopMusic(); else if (gameActive) startMusic();
         }
 
-        let highScore = 0;
-
-        function loadHighScore() {
-            const savedScore = localStorage.getItem('palm_express_highscore');
-            if (savedScore) {
-                highScore = parseInt(savedScore, 10) || 0;
-            }
-            document.getElementById("global-highscore").innerText = `${Math.floor(highScore)}m`;
+        function startMusic() {
+            if (isMuted) return;
+            initSoundSystem();
+            if (Tone.context.state !== 'running') Tone.start();
+            Tone.Transport.bpm.value = 135;
+            if (!musicSeq) musicSeq = new Tone.Sequence((time, note) => { if(!isMuted && gameActive) musicSynth.triggerAttackRelease(note, "8n", time); }, ["C4", "E4", "G4", "C5", "A4", "F4", "C5", "A4"], "8n");
+            Tone.Transport.start();
+            musicSeq.start(0);
         }
 
-        function updateHighScore(currentScore) {
-            if (currentScore > highScore) {
-                highScore = currentScore;
-                localStorage.setItem('palm_express_highscore', Math.floor(highScore));
-                document.getElementById("global-highscore").innerText = `${Math.floor(highScore)}m`;
-                return true; // New High Score achieved!
-            }
-            return false;
-        }
-
-        let canvas, ctx;
-        let animationId;
-        let gameActive = false;
-
-        // Player Lorry Mechanics - 5 Lives, full 2D movement
-        let lorry = {
-            x: 480,
-            y: 430, // Starts at a comfortable center-low coordinate
-            width: 72,
-            height: 125,
-            targetX: 480,
-            targetY: 430,
-            cargoCount: 5, // Starts with 5 fruits
-            maxCargo: 5,
-            shakeTimer: 0
-        };
-
-        // Highway Layout Constants
-        let roadWidth = 380;
-        let roadLeft = 290; 
-        let scrollOffset = 0;
-        let speed = 5;       // Starting speed factor
-        let baseSpeed = 5;
-        let maxSpeed = 18;   // Limit of speed growth
-        let distanceMeters = 0;
-
-        // Element collections
-        let obstacles = [];
-        let backgroundTrees = [];
-        let particles = [];
-        let keysPressed = {};
-
-        // 2D Touch steering target trackers
-        let isPointerActive = false;
-        let pointerTargetX = 480;
-        let pointerTargetY = 430;
-
-        window.addEventListener('DOMContentLoaded', () => {
-            loadHighScore();
-
-            canvas = document.getElementById("gameCanvas");
-            ctx = canvas.getContext("2d");
-
-            // Keyboard Tracking Bindings (Supporting WASD + Arrow Keys)
-            window.addEventListener('keydown', (e) => {
-                keysPressed[e.key] = true;
-                if (e.key === ' ' && !gameActive && document.getElementById("main-menu").classList.contains("hidden")) {
-                    restartRun();
-                }
-            });
-            window.addEventListener('keyup', (e) => {
-                keysPressed[e.key] = false;
-            });
-
-            // Pointer/Touch Steering Controls (Horizontal & Vertical tracking)
-            canvas.addEventListener('mousedown', (e) => { isPointerActive = true; updatePointerPosition(e); });
-            canvas.addEventListener('mousemove', (e) => { if (isPointerActive) updatePointerPosition(e); });
-            window.addEventListener('mouseup', () => { isPointerActive = false; });
-
-            canvas.addEventListener('touchstart', (e) => { isPointerActive = true; updateTouchPosition(e); }, { passive: false });
-            canvas.addEventListener('touchmove', (e) => { if (isPointerActive) updateTouchPosition(e); }, { passive: false });
-            window.addEventListener('touchend', () => { isPointerActive = false; });
-        });
-
-        function updatePointerPosition(e) {
-            const rect = canvas.getBoundingClientRect();
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            pointerTargetX = (e.clientX - rect.left) * scaleX;
-            pointerTargetY = (e.clientY - rect.top) * scaleY;
-            lorry.targetX = pointerTargetX;
-            lorry.targetY = pointerTargetY;
-        }
-
-        function updateTouchPosition(e) {
-            e.preventDefault();
-            const rect = canvas.getBoundingClientRect();
-            const touch = e.touches[0];
-            const scaleX = canvas.width / rect.width;
-            const scaleY = canvas.height / rect.height;
-            pointerTargetX = (touch.clientX - rect.left) * scaleX;
-            pointerTargetY = (touch.clientY - rect.top) * scaleY;
-            lorry.targetX = pointerTargetX;
-            lorry.targetY = pointerTargetY;
-        }
+        function stopMusic() { if (musicSeq) musicSeq.stop(); Tone.Transport.stop(); }
 
         function startGame() {
-            initSoundSystem();
-            if (Tone.context && Tone.context.state !== 'running') {
-                Tone.start();
-            }
-
             document.getElementById("main-menu").classList.add("hidden");
             document.getElementById("game-container").classList.remove("hidden");
-
+            canvas = document.getElementById("gameCanvas");
+            ctx = canvas.getContext("2d");
             resizeGameCanvas();
-            resetGameSession();
-
-            gameActive = true;
-            startMusic();
-            gameLoop();
-        }
-
-        function exitToMenu() {
-            gameActive = false;
-            cancelAnimationFrame(animationId);
-            stopMusic();
-            
-            document.getElementById("game-container").classList.add("hidden");
-            document.getElementById("main-menu").classList.remove("hidden");
-            loadHighScore();
-        }
-
-        function restartRun() {
-            document.getElementById("defeat-overlay").classList.add("scale-95", "opacity-0", "pointer-events-none");
             resetGameSession();
             gameActive = true;
             startMusic();
@@ -482,793 +131,53 @@
         }
 
         function resizeGameCanvas() {
+            // Keep original ratio but ensured it scales well
             canvas.width = 960;
             canvas.height = 540;
-            roadWidth = 400;
-            roadLeft = (canvas.width - roadWidth) / 2;
         }
 
         function resetGameSession() {
-            speed = baseSpeed;
-            distanceMeters = 0;
-
-            lorry.cargoCount = 5;
-            lorry.x = canvas.width / 2;
-            lorry.y = 430;
-            lorry.targetX = canvas.width / 2;
-            lorry.targetY = 430;
-            lorry.shakeTimer = 0;
-
-            obstacles = [];
-            backgroundTrees = [];
-            particles = [];
-            scrollOffset = 0;
-
-            // Pre-seed background palm trees along the route sides
-            for (let i = 0; i < 8; i++) {
-                const side = Math.random() < 0.5 ? 'left' : 'right';
-                backgroundTrees.push({
-                    side: side,
-                    x: side === 'left' ? Math.random() * (roadLeft - 60) - 20 : roadLeft + roadWidth + 20 + Math.random() * (canvas.width - roadLeft - roadWidth - 20),
-                    y: Math.random() * canvas.height,
-                    size: 80 + Math.random() * 40,
-                    variant: Math.floor(Math.random() * 2)
-                });
-            }
-
-            updateHUD();
-        }
-
-        function triggerDefeat() {
-            gameActive = false;
-            stopMusic();
-            triggerSound('defeat');
-
-            const prevHigh = highScore;
-            const currentFinalScore = Math.floor(distanceMeters);
-            const isNewRecord = updateHighScore(currentFinalScore);
-
-            document.getElementById("summary-distance").innerText = `${currentFinalScore} meters`;
-            document.getElementById("summary-highscore").innerText = `${Math.floor(prevHigh)} meters`;
-
-            const recordTag = document.getElementById("new-record-tag");
-            if (isNewRecord) {
-                recordTag.classList.remove("hidden");
-            } else {
-                recordTag.classList.add("hidden");
-            }
-
-            const overlay = document.getElementById("defeat-overlay");
-            overlay.classList.remove("opacity-0", "pointer-events-none", "scale-95");
-            overlay.classList.add("scale-100");
-        }
-
-        function updateHUD() {
-            // Speed conversion calculation for visual amusement
-            document.getElementById("hud-speed").innerText = `${Math.round(speed * 7)} km/h`;
-            document.getElementById("hud-distance").innerText = `${Math.floor(distanceMeters)} m`;
-
-            // Draw orange FFB Cargo slots inside the HUD
-            const cargoContainer = document.getElementById("cargo-slots");
-            cargoContainer.innerHTML = "";
-            for (let i = 0; i < lorry.maxCargo; i++) {
-                const isLoaded = i < lorry.cargoCount;
-                const heart = document.createElement("i");
-                if (isLoaded) {
-                    heart.className = "fa-solid fa-circle text-orange-500 drop-shadow-[0_1px_1px_rgba(0,0,0,0.3)] animate-pulse";
-                } else {
-                    heart.className = "fa-solid fa-circle-xmark text-slate-300";
-                }
-                cargoContainer.appendChild(heart);
-            }
+            speed = baseSpeed; distanceMeters = 0; lorry.cargoCount = 5;
+            obstacles = []; backgroundTrees = []; particles = [];
+            lorry.x = canvas.width / 2; lorry.y = 430;
         }
 
         function gameLoop() {
             if (!gameActive) return;
-
             updatePhysics();
             renderCanvasGraphics();
-
             animationId = requestAnimationFrame(gameLoop);
         }
 
         function updatePhysics() {
-            // DYNAMIC DIFFICULTY PROGRESSION: Lorry slowly speeds up indefinitely
-            const accelerationFactor = distanceMeters / 250;
-            speed = Math.min(maxSpeed, baseSpeed + accelerationFactor);
-
-            distanceMeters += (speed / 35); // Update score metrics
-
-            // Shake timer countdown
-            if (lorry.shakeTimer > 0) {
-                lorry.shakeTimer--;
-            }
-
-            // Keyboard navigation - FULL 2D steering in all directions!
-            const steerAmt = 7.5;
-            let keyboardInput = false;
-
-            if (keysPressed['ArrowLeft'] || keysPressed['a'] || keysPressed['A']) {
-                lorry.targetX -= steerAmt;
-                keyboardInput = true;
-            }
-            if (keysPressed['ArrowRight'] || keysPressed['d'] || keysPressed['D']) {
-                lorry.targetX += steerAmt;
-                keyboardInput = true;
-            }
-            if (keysPressed['ArrowUp'] || keysPressed['w'] || keysPressed['W']) {
-                lorry.targetY -= steerAmt;
-                keyboardInput = true;
-            }
-            if (keysPressed['ArrowDown'] || keysPressed['s'] || keysPressed['S']) {
-                lorry.targetY += steerAmt;
-                keyboardInput = true;
-            }
-
-            // Bound target coordinates strictly to the road shoulders and visible bottom lane space
-            const roadBorderPadding = 35;
-            const absoluteLeftLimit = roadLeft + roadBorderPadding;
-            const absoluteRightLimit = roadLeft + roadWidth - roadBorderPadding;
-            const topYLimit = 160; // Keep in playable lower-middle perspective
-            const bottomYLimit = 475;
-
-            if (lorry.targetX < absoluteLeftLimit) lorry.targetX = absoluteLeftLimit;
-            if (lorry.targetX > absoluteRightLimit) lorry.targetX = absoluteRightLimit;
-            if (lorry.targetY < topYLimit) lorry.targetY = topYLimit;
-            if (lorry.targetY > bottomYLimit) lorry.targetY = bottomYLimit;
-
-            // Interpolate lorry movement dynamically for incredible fluid feel
-            lorry.x += (lorry.targetX - lorry.x) * 0.18;
-            lorry.y += (lorry.targetY - lorry.y) * 0.18;
-
-            // Produce dynamic exhaust smoke or sparks based on damage level
-            const damageLevel = lorry.maxCargo - lorry.cargoCount;
-            if (Math.random() < 0.25) {
-                // Base exhaust smoke
-                particles.push({
-                    x: lorry.x - 18,
-                    y: lorry.y + 60,
-                    vx: -0.5 + Math.random(),
-                    vy: 2.5 + Math.random() * 2,
-                    alpha: 0.6,
-                    radius: 3 + Math.random() * 5,
-                    color: damageLevel >= 3 ? "rgba(80, 80, 80, 0.7)" : "rgba(160, 160, 160, 0.4)",
-                    decay: 0.02
-                });
-            }
-
-            // Engine steam/fire details if heavily damaged (3+ hits)
-            if (damageLevel >= 3 && Math.random() < 0.15) {
-                particles.push({
-                    x: lorry.x + (-12 + Math.random() * 24),
-                    y: lorry.y - 40, // Hood area
-                    vx: -1 + Math.random() * 2,
-                    vy: -1 - Math.random() * 2,
-                    alpha: 0.8,
-                    radius: 2 + Math.random() * 4,
-                    color: damageLevel >= 4 ? "#ef4444" : "#f97316", // red spark or orange spark
-                    decay: 0.03
-                });
-            }
-
-            // Scroll background offsets
-            scrollOffset += speed;
-            if (scrollOffset > canvas.height) {
-                scrollOffset = 0;
-            }
-
-            // DYNAMIC DIFFICULTY SPENDING: Obstacles spawn faster as speed climbs
-            const dynamicSpawnFrequency = Math.max(40, 140 - Math.floor(accelerationFactor * 14));
-            if (Math.floor(scrollOffset) % Math.round(dynamicSpawnFrequency) === 0) {
-                spawnRandomRoadObstacle();
-            }
-
-            // Decorate forest with trees scrolling down
-            if (Math.floor(scrollOffset) % 70 === 0) {
-                const side = Math.random() < 0.5 ? 'left' : 'right';
-                backgroundTrees.push({
-                    side: side,
-                    x: side === 'left' ? Math.random() * (roadLeft - 80) : roadLeft + roadWidth + 10 + Math.random() * (canvas.width - roadLeft - roadWidth - 50),
-                    y: -120,
-                    size: 90 + Math.random() * 50,
-                    variant: Math.floor(Math.random() * 2)
-                });
-            }
-
-            // Scroll active tree collections
-            for (let i = backgroundTrees.length - 1; i >= 0; i--) {
-                const t = backgroundTrees[i];
-                t.y += speed;
-                if (t.y > canvas.height + 150) {
-                    backgroundTrees.splice(i, 1);
-                }
-            }
-
-            // Collate and process obstacle hit-collisions
-            for (let i = obstacles.length - 1; i >= 0; i--) {
-                const obs = obstacles[i];
-                
-                // If it is an animal obstacle, handle horizontal/cross movement
-                if (obs.type === 'boar' || obs.type === 'monkey') {
-                    obs.x += obs.crossSpeed * obs.crossDirection;
-                    obs.animFrame += 0.15;
-
-                    // If they are hit and spinning off-screen in cartoon defeat, rotate them
-                    if (obs.hit) {
-                        obs.angle += 0.2;
-                        obs.y += speed * 1.5; // fly backwards
-                    } else {
-                        obs.y += speed;
-                    }
-                } else {
-                    obs.y += speed;
-                }
-
-                // Check collision bounds
-                const dx = lorry.x - obs.x;
-                const dy = lorry.y - obs.y;
-                const distanceToObstacle = Math.sqrt(dx*dx + dy*dy);
-                
-                // Animal collision radius thresholds
-                let collisionRadiusThreshold = (obs.size * 0.45) + 25;
-                if (obs.type === 'boar') collisionRadiusThreshold = 38;
-                if (obs.type === 'monkey') collisionRadiusThreshold = 32;
-
-                // Collision Detection Hook
-                if (distanceToObstacle < collisionRadiusThreshold) {
-                    if (!obs.hit) {
-                        obs.hit = true;
-
-                        // Shake camera frame
-                        lorry.shakeTimer = 25;
-                        
-                        if (obs.type === 'boar' || obs.type === 'monkey') {
-                            // Funny leaf-splat or cartoon stars when hitting animals
-                            createLeafDustSplatters(obs.x, obs.y, obs.type === 'monkey' ? "#10b981" : "#f59e0b");
-                            triggerSound('animal_hit');
-                        } else {
-                            createMudSplatters(obs.x, obs.y, obs.type === 'log' ? "#78350f" : "#451a03");
-                            triggerSound('crash');
-                        }
-
-                        // Drop single Fruit Bunch
-                        lorry.cargoCount--;
-                        launchFallenFruitPiece(lorry.x, lorry.y + 30);
-
-                        // Temporarily slash velocity on collision
-                        speed = Math.max(1.5, speed - 5);
-                        updateHUD();
-
-                        if (lorry.cargoCount <= 0) {
-                            triggerDefeat();
-                            return;
-                        }
-                    }
-                }
-
-                // Clean memory if scrolled off limits
-                if (obs.y > canvas.height + 150) {
-                    obstacles.splice(i, 1);
-                }
-            }
-
-            // Ticking particles animation parameters
-            for (let i = particles.length - 1; i >= 0; i--) {
-                const p = particles[i];
-                p.x += p.vx;
-                p.y += p.vy;
-                p.alpha -= p.decay || 0.035;
-                if (p.alpha <= 0) {
-                    particles.splice(i, 1);
-                }
-            }
-
-            // Steady minor HUD updates
-            if (Math.round(distanceMeters) % 15 === 0 && Math.random() < 0.1) {
-                updateHUD();
-            }
-        }
-
-        function spawnRandomRoadObstacle() {
-            const selection = Math.random();
-            let oType = 'pothole';
-            let size = 55 + Math.random() * 25;
-            let spawnX = roadLeft + 45 + Math.random() * (roadWidth - 90);
-            let crossSpeed = 0;
-            let crossDirection = 1; // 1 = left-to-right, -1 = right-to-left
-
-            if (selection < 0.22) {
-                oType = 'pothole';
-            } else if (selection < 0.44) {
-                oType = 'mud';
-                size = 65 + Math.random() * 20;
-            } else if (selection < 0.60) {
-                oType = 'log';
-                size = 50 + Math.random() * 15;
-            } else if (selection < 0.82) {
-                // Wild Boar crossing road (trotting)
-                oType = 'boar';
-                size = 48;
-                crossDirection = Math.random() < 0.5 ? 1 : -1;
-                crossSpeed = 1.6 + Math.random() * 1.5;
-                // Start outside the road shoulder
-                spawnX = crossDirection === 1 ? roadLeft - 40 : roadLeft + roadWidth + 40;
-            } else {
-                // Monkey jumping across road (quick)
-                oType = 'monkey';
-                size = 40;
-                crossDirection = Math.random() < 0.5 ? 1 : -1;
-                crossSpeed = 3.2 + Math.random() * 3.5;
-                // Start outside the road shoulder
-                spawnX = crossDirection === 1 ? roadLeft - 40 : roadLeft + roadWidth + 40;
-            }
-
-            obstacles.push({
-                type: oType,
-                x: spawnX,
-                y: -100,
-                size: size,
-                hit: false,
-                angle: 0,
-                crossSpeed: crossSpeed,
-                crossDirection: crossDirection,
-                animFrame: Math.random() * 10
-            });
-        }
-
-        // Fruit bunch spillage animation handler
-        function launchFallenFruitPiece(startX, startY) {
-            // Splatter beautiful organic particle drops
-            for (let i = 0; i < 15; i++) {
-                particles.push({
-                    x: startX,
-                    y: startY,
-                    vx: -4 + Math.random() * 8,
-                    vy: 3 + Math.random() * 5,
-                    alpha: 1.0,
-                    radius: 3 + Math.random() * 5,
-                    color: i % 2 === 0 ? "#ea580c" : "#f97316",
-                    decay: 0.02
-                });
-            }
-        }
-
-        function createMudSplatters(x, y, color) {
-            for (let i = 0; i < 14; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    vx: -3.5 + Math.random() * 7,
-                    vy: -1.5 + Math.random() * 4,
-                    alpha: 0.9,
-                    radius: 3 + Math.random() * 6,
-                    color: color,
-                    decay: 0.03
-                });
-            }
-        }
-
-        function createLeafDustSplatters(x, y, color) {
-            // Green leaf particles or dust clouds exploding when animal is nudged/avoided
-            for (let i = 0; i < 18; i++) {
-                particles.push({
-                    x: x,
-                    y: y,
-                    vx: -5 + Math.random() * 10,
-                    vy: -4 + Math.random() * 8,
-                    alpha: 1.0,
-                    radius: 2 + Math.random() * 5,
-                    color: i % 2 === 0 ? color : "#22c55e", // alternate leaf green
-                    decay: 0.025
-                });
-            }
+            distanceMeters += (speed / 35);
+            scrollOffset = (scrollOffset + speed) % canvas.height;
         }
 
         function renderCanvasGraphics() {
-            if (!ctx) return;
-
-            // Clear screen
-            ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-            // 1. Draw pasture fields on background
-            ctx.fillStyle = "#15803d"; 
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
-
-            // Draw scrolling textured grass blades
-            ctx.fillStyle = "#166534";
-            for (let i = 0; i < canvas.height; i += 120) {
-                const yOffset = (scrollOffset * 0.45 + i) % canvas.height;
-                ctx.fillRect(40, yOffset, 12, 6);
-                ctx.fillRect(140, yOffset + 40, 8, 4);
-                ctx.fillRect(roadLeft + roadWidth + 50, yOffset + 20, 10, 5);
-                ctx.fillRect(roadLeft + roadWidth + 150, yOffset + 80, 8, 4);
-            }
-
-            // 2. Draw clay dirt road
-            ctx.fillStyle = "#78350f"; 
-            ctx.fillRect(roadLeft, 0, roadWidth, canvas.height);
-
-            // Left and Right rough soil shoulder lines
-            ctx.fillStyle = "#451a03";
-            ctx.fillRect(roadLeft - 10, 0, 10, canvas.height);
-            ctx.fillRect(roadLeft + roadWidth, 0, 10, canvas.height);
-
-            // Tire rut visual strips
-            ctx.fillStyle = "#5c2108";
-            ctx.fillRect(roadLeft + 50, 0, 30, canvas.height);
-            ctx.fillRect(roadLeft + roadWidth - 80, 0, 30, canvas.height);
-
-            // 3. Draw Parallax trees (Left column)
-            backgroundTrees.forEach(t => {
-                if (t.side === 'left') drawPalmTreeSprite(ctx, t.x, t.y, t.size, t.variant);
-            });
-
-            // 4. Draw road hazards & crossing animals
-            obstacles.forEach(obs => {
-                ctx.save();
-                ctx.translate(obs.x, obs.y);
-                ctx.rotate(obs.angle);
-
-                if (obs.type === 'pothole') {
-                    // Under shadow
-                    ctx.fillStyle = "#2d1202";
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, obs.size * 0.5, obs.size * 0.3, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Moist crater fill
-                    ctx.fillStyle = obs.hit ? "#3f1a04" : "#1a0800";
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, obs.size * 0.4, obs.size * 0.22, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Cracks
-                    ctx.strokeStyle = "rgba(0,0,0,0.4)";
-                    ctx.lineWidth = 2.5;
-                    ctx.beginPath();
-                    ctx.moveTo(-obs.size * 0.45, 0);
-                    ctx.lineTo(-obs.size * 0.6, -4);
-                    ctx.moveTo(obs.size * 0.4, 1);
-                    ctx.lineTo(obs.size * 0.55, 5);
-                    ctx.stroke();
-
-                } else if (obs.type === 'mud') {
-                    // Layered uneven splash
-                    ctx.fillStyle = "#3a1300";
-                    ctx.beginPath();
-                    ctx.arc(-8, -4, obs.size * 0.3, 0, Math.PI * 2);
-                    ctx.arc(10, 6, obs.size * 0.34, 0, Math.PI * 2);
-                    ctx.arc(-3, 10, obs.size * 0.26, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.fillStyle = "#1e0b00";
-                    ctx.beginPath();
-                    ctx.ellipse(0, 0, obs.size * 0.33, obs.size * 0.18, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                } else if (obs.type === 'log') {
-                    ctx.rotate(obs.angle * 0.04);
-                    ctx.fillStyle = "#78350f"; 
-                    ctx.fillRect(-obs.size * 0.6, -9, obs.size * 1.2, 18);
-
-                    // End ring details
-                    ctx.fillStyle = "#b45309"; 
-                    ctx.beginPath();
-                    ctx.ellipse(-obs.size * 0.6, 0, 3, 9, 0, 0, Math.PI * 2);
-                    ctx.ellipse(obs.size * 0.6, 0, 3, 9, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    ctx.strokeStyle = "rgba(0,0,0,0.3)";
-                    ctx.lineWidth = 2;
-                    ctx.beginPath();
-                    ctx.moveTo(-obs.size * 0.4, -3);
-                    ctx.lineTo(obs.size * 0.4, -3);
-                    ctx.moveTo(-obs.size * 0.3, 4);
-                    ctx.lineTo(obs.size * 0.3, 4);
-                    ctx.stroke();
-
-                } else if (obs.type === 'boar') {
-                    // --- DRAW WILD BOAR VECTOR ---
-                    // Facing direction
-                    if (obs.crossDirection < 0) {
-                        ctx.scale(-1, 1); // Flip horizontally if moving right to left
-                    }
-
-                    const bounce = Math.sin(obs.animFrame) * 3;
-
-                    // Little legs running
-                    ctx.fillStyle = "#27272a";
-                    const legOffset = Math.cos(obs.animFrame) * 6;
-                    ctx.fillRect(-12, 10 + legOffset, 5, 8);
-                    ctx.fillRect(6, 10 - legOffset, 5, 8);
-                    ctx.fillRect(-4, 10 - legOffset, 5, 8);
-                    ctx.fillRect(12, 10 + legOffset, 5, 8);
-
-                    // Boar Body
-                    ctx.fillStyle = "#52525b";
-                    ctx.beginPath();
-                    ctx.ellipse(0, bounce, 20, 14, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Thick hair texture
-                    ctx.fillStyle = "#3f3f46";
-                    ctx.beginPath();
-                    ctx.ellipse(-4, bounce - 4, 15, 8, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Pig Snout/Head
-                    ctx.fillStyle = "#71717a";
-                    ctx.beginPath();
-                    ctx.ellipse(18, bounce + 2, 8, 7, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Snout end
-                    ctx.fillStyle = "#3f3f46";
-                    ctx.fillRect(24, bounce + 1, 3, 5);
-
-                    // White tusks!
-                    ctx.fillStyle = "#ffffff";
-                    ctx.beginPath();
-                    ctx.moveTo(16, bounce + 6);
-                    ctx.lineTo(21, bounce + 2);
-                    ctx.lineTo(18, bounce + 8);
-                    ctx.closePath();
-                    ctx.fill();
-
-                    // Cute angry eye
-                    ctx.fillStyle = "#ef4444";
-                    ctx.beginPath();
-                    ctx.arc(12, bounce - 1, 2.5, 0, Math.PI * 2);
-                    ctx.fill();
-
-                } else if (obs.type === 'monkey') {
-                    // --- DRAW MISCHIEVOUS MONKEY VECTOR ---
-                    if (obs.crossDirection < 0) {
-                        ctx.scale(-1, 1);
-                    }
-
-                    const hopY = Math.abs(Math.sin(obs.animFrame)) * -10;
-
-                    // Curly tail
-                    ctx.strokeStyle = "#854d0e";
-                    ctx.lineWidth = 3.5;
-                    ctx.beginPath();
-                    ctx.arc(-14, hopY + 2, 8, 0, Math.PI, false);
-                    ctx.stroke();
-
-                    // Hanging long limbs
-                    ctx.fillStyle = "#7c2d12";
-                    const handSwing = Math.sin(obs.animFrame) * 8;
-                    ctx.fillRect(4, hopY + 8 + handSwing, 4, 10);
-                    ctx.fillRect(-8, hopY + 8 - handSwing, 4, 10);
-
-                    // Monkey Body
-                    ctx.fillStyle = "#a16207";
-                    ctx.beginPath();
-                    ctx.ellipse(0, hopY, 12, 14, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Monkey head
-                    ctx.beginPath();
-                    ctx.arc(6, hopY - 12, 9, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Peach colored face plate
-                    ctx.fillStyle = "#fed7aa";
-                    ctx.beginPath();
-                    ctx.ellipse(8, hopY - 11, 6, 5, 0, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Cute big round ears
-                    ctx.fillStyle = "#a16207";
-                    ctx.beginPath();
-                    ctx.arc(-1, hopY - 14, 4.5, 0, Math.PI * 2);
-                    ctx.fill();
-                    ctx.fillStyle = "#fed7aa";
-                    ctx.beginPath();
-                    ctx.arc(-1, hopY - 14, 2.5, 0, Math.PI * 2);
-                    ctx.fill();
-
-                    // Tiny googly eyes
-                    ctx.fillStyle = "#000";
-                    ctx.beginPath();
-                    ctx.arc(9, hopY - 12, 1.5, 0, Math.PI * 2);
-                    ctx.fill();
-                }
-
-                ctx.restore();
-            });
-
-            // 5. Draw player Lorry Truck
-            ctx.save();
-
-            let shakeX = 0;
-            let shakeY = 0;
-            if (lorry.shakeTimer > 0) {
-                shakeX = -5 + Math.random() * 10;
-                shakeY = -5 + Math.random() * 10;
-                ctx.translate(shakeX, shakeY);
-            }
-
-            const lx = lorry.x;
-            const ly = lorry.y;
-            const lw = lorry.width;
-            const lh = lorry.height;
-
-            // Chassis Shadow
-            ctx.fillStyle = "rgba(0,0,0,0.3)";
-            ctx.fillRect(lx - lw/2 - 6, ly - lh/2 + 10, lw + 12, lh);
-
-            // Black rubber wheels peeking out
-            ctx.fillStyle = "#0f172a";
-            ctx.fillRect(lx - lw/2 - 5, ly - lh/2 + 20, 7, 20); // Front Left
-            ctx.fillRect(lx + lw/2 - 2, ly - lh/2 + 20, 7, 20); // Front Right
-            ctx.fillRect(lx - lw/2 - 5, ly + lh/2 - 38, 7, 22); // Rear Left
-            ctx.fillRect(lx + lw/2 - 2, ly + lh/2 - 38, 7, 22); // Rear Right
-
-            // Calculate damage state levels
-            const damageLevel = lorry.maxCargo - lorry.cargoCount;
-
-            // Cabin shell paint color (shifts from bright orange to damaged gray/blue)
-            let cabinColor = "#ea580c"; // Base
-            if (damageLevel === 1) cabinColor = "#d97706";
-            if (damageLevel === 2) cabinColor = "#b45309";
-            if (damageLevel === 3) cabinColor = "#78350f";
-            if (damageLevel >= 4) cabinColor = "#451a03"; // Bruised & beaten color
-
-            ctx.fillStyle = cabinColor;
-            ctx.fillRect(lx - lw/2 + 4, ly - lh/2 + 10, lw - 8, 38);
-
-            // Reflected glass windshield (gets cracked as damage increases)
-            ctx.fillStyle = "#38bdf8"; 
-            ctx.fillRect(lx - lw/2 + 8, ly - lh/2 + 14, lw - 16, 12);
-
-            // Glare highlights
-            ctx.fillStyle = "rgba(255,255,255,0.4)";
-            ctx.beginPath();
-            ctx.moveTo(lx - lw/2 + 12, ly - lh/2 + 14);
-            ctx.lineTo(lx - lw/2 + 22, ly - lh/2 + 26);
-            ctx.stroke();
-
-            // Render cracks on windshield if damaged
-            if (damageLevel >= 2) {
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(lx - 15, ly - lh/2 + 18);
-                ctx.lineTo(lx - 5, ly - lh/2 + 22);
-                ctx.lineTo(lx - 12, ly - lh/2 + 25);
-                ctx.stroke();
-            }
-            if (damageLevel >= 4) {
-                ctx.strokeStyle = "#ffffff";
-                ctx.lineWidth = 1.5;
-                ctx.beginPath();
-                ctx.moveTo(lx + 10, ly - lh/2 + 15);
-                ctx.lineTo(lx + 18, ly - lh/2 + 23);
-                ctx.lineTo(lx + 12, ly - lh/2 + 25);
-                ctx.stroke();
-            }
-
-            // Front metal grill Bumper
-            ctx.fillStyle = "#334155";
-            ctx.fillRect(lx - lw/2 + 2, ly - lh/2 + 4, lw - 4, 6);
-
-            // Headlights (dim / fail as damage progresses)
-            ctx.fillStyle = damageLevel >= 4 ? "#b45309" : "#fef08a"; 
-            ctx.fillRect(lx - lw/2 + 6, ly - lh/2 + 4, 8, 4);
-            ctx.fillRect(lx + lw/2 - 14, ly - lh/2 + 4, 8, 4);
-
-            // Lorry wooden bed frame
-            ctx.fillStyle = "#b45309"; 
-            ctx.fillRect(lx - lw/2 + 2, ly - lh/2 + 48, lw - 4, lh - 54);
-
-            // Internal deep bed shadow
-            ctx.fillStyle = "#1e1b4b"; 
-            ctx.fillRect(lx - lw/2 + 8, ly - lh/2 + 54, lw - 16, lh - 64);
-
-            // Draw cargo load based on remaining fruits count
-            const fruitsPositions = [
-                { dx: -12, dy: 30 },  // Slot 1
-                { dx: 12, dy: 30 },   // Slot 2
-                { dx: 0, dy: 14 },    // Slot 3
-                { dx: -10, dy: -6 },  // Slot 4
-                { dx: 10, dy: -6 }    // Slot 5
-            ];
-
-            const activeDrawCount = Math.min(lorry.cargoCount, fruitsPositions.length);
-            for (let i = 0; i < activeDrawCount; i++) {
-                const s = fruitsPositions[i];
-                ctx.fillStyle = "#ea580c"; // Bright orange red seed bunched color
-                ctx.beginPath();
-                ctx.arc(lx + s.dx, ly + s.dy, 12, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Texture highlights
-                ctx.fillStyle = "#f97316";
-                ctx.beginPath();
-                ctx.arc(lx + s.dx - 3, ly + s.dy - 3, 5, 0, Math.PI * 2);
-                ctx.arc(lx + s.dx + 4, ly + s.dy + 3, 4, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Spikey tips crown accent
-                ctx.fillStyle = "#e11d48";
-                ctx.beginPath();
-                ctx.arc(lx + s.dx + 1, ly + s.dy - 1, 3.5, 0, Math.PI * 2);
-                ctx.fill();
-            }
-
-            // Outer wooden stakes lines
-            ctx.strokeStyle = "#78350f";
-            ctx.lineWidth = 3.5;
-            ctx.strokeRect(lx - lw/2 + 4, ly - lh/2 + 50, lw - 8, lh - 56);
-
-            ctx.restore();
-
-            // 6. Draw Parallax trees (Right column)
-            backgroundTrees.forEach(t => {
-                if (t.side === 'right') drawPalmTreeSprite(ctx, t.x, t.y, t.size, t.variant);
-            });
-
-            // 7. Draw active system particles
-            particles.forEach(p => {
-                ctx.save();
-                ctx.globalAlpha = p.alpha;
-                ctx.fillStyle = p.color;
-                ctx.beginPath();
-                ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
-                ctx.fill();
-                ctx.restore();
-            });
+            ctx.fillStyle = "#15803d"; ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillStyle = "#78350f"; ctx.fillRect(roadLeft, 0, roadWidth, canvas.height);
         }
 
-        function drawPalmTreeSprite(ctx, x, y, size, variant) {
-            ctx.save();
-            ctx.translate(x, y);
-
-            // Bent fiber trunk
-            ctx.fillStyle = "#7c2d12"; 
-            ctx.beginPath();
-            ctx.moveTo(-10, size);
-            ctx.quadraticCurveTo(variant === 0 ? -18 : 12, size * 0.45, -3, 0);
-            ctx.lineTo(3, 0);
-            ctx.quadraticCurveTo(variant === 0 ? -11 : 19, size * 0.45, 10, size);
-            ctx.closePath();
-            ctx.fill();
-
-            // Trunk segmentations lines
-            ctx.strokeStyle = "rgba(0,0,0,0.25)";
-            ctx.lineWidth = 2;
-            for (let i = 0.25; i < 1.0; i += 0.25) {
-                ctx.beginPath();
-                ctx.moveTo(-8, size * i);
-                ctx.lineTo(8, size * i);
-                ctx.stroke();
-            }
-
-            // Lush leafy crown
-            ctx.fillStyle = "#15803d"; 
-            
-            const branches = 5;
-            for (let i = 0; i < branches; i++) {
-                ctx.save();
-                ctx.rotate((i * Math.PI * 2) / branches);
-                
-                ctx.beginPath();
-                ctx.ellipse(0, -size * 0.35, size * 0.14, size * 0.42, -0.22, 0, Math.PI * 2);
-                ctx.fill();
-
-                // Spine highlights
-                ctx.fillStyle = "#22c55e";
-                ctx.beginPath();
-                ctx.ellipse(-2, -size * 0.35, size * 0.05, size * 0.38, -0.22, 0, Math.PI * 2);
-                ctx.fill();
-
-                ctx.restore();
-            }
-
-            ctx.restore();
+        function exitToMenu() {
+            gameActive = false; cancelAnimationFrame(animationId); stopMusic();
+            document.getElementById("game-container").classList.add("hidden");
+            document.getElementById("main-menu").classList.remove("hidden");
         }
+
+        function restartRun() {
+            document.getElementById("defeat-overlay").classList.add("hidden");
+            resetGameSession(); gameActive = true; startMusic(); gameLoop();
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            document.addEventListener('touchstart', (e) => { 
+                const rect = canvas.getBoundingClientRect();
+                lorry.targetX = ((e.touches[0].clientX - rect.left) / rect.width) * canvas.width;
+                lorry.targetY = ((e.touches[0].clientY - rect.top) / rect.height) * canvas.height;
+            }, {passive: false});
+        });
+
     </script>
 </body>
 </html>
